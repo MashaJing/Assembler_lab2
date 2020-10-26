@@ -1,0 +1,110 @@
+Microsoft (R) Macro Assembler Version 14.27.29112.0	    10/19/20 20:17:09
+AsmApp.asm						     Page 1 - 1
+
+
+				.386
+				.MODEL FLAT
+
+ 00000000			.DATA
+ 00000000 00000000		pos dd 0 ; переменная для результата
+ 00000004 00000000		t dd 0 ; переменная для 2-го цикла
+ 00000008 00000000		len1 dd 0 ; переменная для хранения размера 1-ой строки
+
+ 00000000			.CODE
+ 00000000			@SearchString@16 PROC ; СТЕК: [Старое значение EBP 4][Адрес возврата 4]
+				; [Адрес первого элемента строки 4][длина строки 4]
+
+ 00000000  55			PUSH EBP
+ 00000001  8B EC		MOV EBP, ESP
+ 00000003  83 C5 04		ADD EBP, 4 ; Теперь ebp указывает на начало первой строки
+ 00000006  BF 00000000		MOV EDI, 0 ; Индекс текущего символа
+				;в нашем случае, счётчик 1 цикла = кол-во символов 1 строчки уже в регистре ECX,
+				;а счётчик 2 цикла = кол-во символов 2 строчки - в EDX
+
+
+ 0000000B			ForEachCharIn1:
+ 0000000B  8B 45 00		MOV EAX, [EBP]
+ 0000000E  8A 04 38		MOV AL, [EAX + EDI] ;текущий элемент 1 строки: [[EBP] + EDI] 
+ 00000011  89 0D 00000008 R	MOV len1, ECX ;сохраним в переменную счётчик 1 цикла, чтобы
+ 00000017  8B CA		MOV ECX, EDX ;поместить длину второй строки в ECX и начать вложенный цикл
+ 00000019  89 3D 00000000 R	MOV pos, EDI
+ 0000001F  BF 00000004		MOV EDI, 4; Теперь EDI - итератор вложенного цикла. Помещаем
+				;в него 4, чтобы он указывал на начало 2 строки
+
+ 00000024			ForEachCharIn2:
+ 00000024  3A 04 38		CMP AL, [EAX + EDI] ; Равны ли символы строк 1 и 2
+ 00000027  74 0B		JE SearchNext
+ 00000029  75 00		JNE IsNotEqual
+
+ 0000002B			IsNotEqual:
+ 0000002B  3B F9		CMP EDI, ECX
+ 0000002D  74 1E		JE Break
+ 0000002F  75 00		JNE NextLetter
+
+ 00000031			NextLetter:
+ 00000031  47			INC EDI; увеличим t на 1
+ 00000032  E2 F0		LOOP ForEachCharIn2
+
+ 00000034			SearchNext:
+ 00000034  8B 3D 00000000 R	MOV EDI, pos
+ 0000003A  47			INC EDI
+ 0000003B  8B 0D 00000008 R	MOV ECX, len1 ;восстанавливаем значение счётчика
+ 00000041  E2 C8		LOOP ForEachCharIn1
+
+ 00000043  C7 05 00000000 R	MOV pos, 0
+	   00000000
+ 0000004D			Break:
+ 0000004D  A1 00000000 R	MOV EAX, pos ; В EAX помещаем позицию несовпавшего знака из 1 строки,
+				; чтобы вернуть её вызывающей программе.
+ 00000052  5D			POP EBP ; Возвращаем старое значение EBP
+ 00000053  C2 0008		RET 8
+
+ 00000056			@SearchString@16 ENDP
+				END
+Microsoft (R) Macro Assembler Version 14.27.29112.0	    10/19/20 20:17:09
+AsmApp.asm						     Symbols 2 - 1
+
+
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+FLAT . . . . . . . . . . . . . .	GROUP
+_DATA  . . . . . . . . . . . . .	32 Bit	 0000000C DWord	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	32 Bit	 00000056 DWord	  Public  'CODE'	
+
+
+Procedures, parameters, and locals:
+
+                N a m e                 Type     Value    Attr
+
+@SearchString@16 . . . . . . . .	P Near	 00000000 _TEXT	Length= 00000056 Public
+  ForEachCharIn1 . . . . . . . .	L Near	 0000000B _TEXT	
+  ForEachCharIn2 . . . . . . . .	L Near	 00000024 _TEXT	
+  IsNotEqual . . . . . . . . . .	L Near	 0000002B _TEXT	
+  NextLetter . . . . . . . . . .	L Near	 00000031 _TEXT	
+  SearchNext . . . . . . . . . .	L Near	 00000034 _TEXT	
+  Break  . . . . . . . . . . . .	L Near	 0000004D _TEXT	
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+@CodeSize  . . . . . . . . . . .	Number	 00000000h   
+@DataSize  . . . . . . . . . . .	Number	 00000000h   
+@Interface . . . . . . . . . . .	Number	 00000000h   
+@Model . . . . . . . . . . . . .	Number	 00000007h   
+@code  . . . . . . . . . . . . .	Text   	 _TEXT
+@data  . . . . . . . . . . . . .	Text   	 FLAT
+@fardata?  . . . . . . . . . . .	Text   	 FLAT
+@fardata . . . . . . . . . . . .	Text   	 FLAT
+@stack . . . . . . . . . . . . .	Text   	 FLAT
+len1 . . . . . . . . . . . . . .	DWord	 00000008 _DATA	
+pos  . . . . . . . . . . . . . .	DWord	 00000000 _DATA	
+t  . . . . . . . . . . . . . . .	DWord	 00000004 _DATA	
+
+	   0 Warnings
+	   0 Errors
